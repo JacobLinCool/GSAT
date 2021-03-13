@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>學測級分換算</title>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link href="https://stackpath.bootstrapcdn.com/bootswatch/4.4.1/flatly/bootstrap.min.css" rel="stylesheet" />
+        <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    </head>
+    <body>
+        <div style="margin: 10px;" id="app">
+            <div v-for="itm in converted">
+                <div>
+                    <h2> {{ itm.year }} </h2>
+                    <p> {{ itm.data.國文 }}  {{ itm.data.英文 }}  {{ itm.data.數學 }}  {{ itm.data.社會 }}  {{ itm.data.自然 }} </p>
+                </div>
+            </div>
+        </div>
+        <script>
+            fetch("counting.json")
+                .then((r) => r.json())
+                .then(init_app);
+
+            async function init_app(data) {
+                window.app = new Vue({
+                    el: "#app",
+                    data() {
+                        return {
+                            國文: 15,
+                            英文: 15,
+                            數學: 15,
+                            社會: 15,
+                            自然: 15,
+                            mode: "AVG",
+                            data: data
+                        };
+                    },
+                    computed: {
+                        converted() {
+                            let c = this.convert(this.國文, this.英文, this.數學, this.社會, this.自然, this.data, this.mode);
+                            let r = [];
+                            for(let i in c) {
+                                r.push({
+                                    year: i,
+                                    data: c[i]
+                                });
+                            }
+                            return r;
+                        }
+                    },
+                    methods: {
+                        convert(國文, 英文, 數學, 社會, 自然, data, mode = "AVG") {
+                            let year = "110";
+                            let TOPs = {
+                                國文: top(國文, data[year].國文),
+                                英文: top(英文, data[year].英文),
+                                數學: top(數學, data[year].數學),
+                                社會: top(社會, data[year].社會),
+                                自然: top(自然, data[year].自然),
+                            };
+                            let BTMs = {
+                                國文: btm(國文, data[year].國文),
+                                英文: btm(英文, data[year].英文),
+                                數學: btm(數學, data[year].數學),
+                                社會: btm(社會, data[year].社會),
+                                自然: btm(自然, data[year].自然),
+                            };
+                            let AVGs = {
+                                國文: avg(國文, data[year].國文),
+                                英文: avg(英文, data[year].英文),
+                                數學: avg(數學, data[year].數學),
+                                社會: avg(社會, data[year].社會),
+                                自然: avg(自然, data[year].自然),
+                            };
+
+                            let TOP = {},
+                                BTM = {},
+                                AVG = {};
+
+                            for (let y = 109; y >= 106; y--) {
+                                TOP[y] = {};
+                                TOP[y]["國文"] = grade(TOPs.國文, data[y].國文);
+                                TOP[y]["英文"] = grade(TOPs.英文, data[y].英文);
+                                TOP[y]["數學"] = grade(TOPs.數學, data[y].數學);
+                                TOP[y]["社會"] = grade(TOPs.社會, data[y].社會);
+                                TOP[y]["自然"] = grade(TOPs.自然, data[y].自然);
+                            }
+                            for (let y = 109; y >= 106; y--) {
+                                BTM[y] = {};
+                                BTM[y]["國文"] = grade(BTMs.國文, data[y].國文);
+                                BTM[y]["英文"] = grade(BTMs.英文, data[y].英文);
+                                BTM[y]["數學"] = grade(BTMs.數學, data[y].數學);
+                                BTM[y]["社會"] = grade(BTMs.社會, data[y].社會);
+                                BTM[y]["自然"] = grade(BTMs.自然, data[y].自然);
+                            }
+                            for (let y = 109; y >= 106; y--) {
+                                AVG[y] = {};
+                                AVG[y]["國文"] = grade(AVGs.國文, data[y].國文);
+                                AVG[y]["英文"] = grade(AVGs.英文, data[y].英文);
+                                AVG[y]["數學"] = grade(AVGs.數學, data[y].數學);
+                                AVG[y]["社會"] = grade(AVGs.社會, data[y].社會);
+                                AVG[y]["自然"] = grade(AVGs.自然, data[y].自然);
+                            }
+
+                            if (mode == "TOP") {
+                                return TOP;
+                            } else if (mode == "BTM") {
+                                return BTM;
+                            } else if (mode == "AVG") {
+                                return AVG;
+                            } else {
+                                return {
+                                    AVG,
+                                    TOP,
+                                    BTM,
+                                };
+                            }
+
+                            function acc(grade, table) {
+                                let sum = 0;
+                                for (let i = 15; i >= grade; i--) sum += table[i];
+                                return sum;
+                            }
+                            function top(grade, table) {
+                                if (grade < 15) grade++;
+                                return acc(grade, table) + 1;
+                            }
+                            function btm(grade, table) {
+                                return acc(grade, table);
+                            }
+                            function avg(grade, table) {
+                                return parseInt((top(grade, table) + btm(grade, table)) / 2);
+                            }
+                            function grade(rank, table) {
+                                let u, l;
+                                for (let i = 15; i >= 0; i--) {
+                                    if (acc(i, table) >= rank) {
+                                        u = i + 1;
+                                        l = i;
+                                        break;
+                                    }
+                                }
+                                return Math.floor((u - (rank - acc(u, table)) / (acc(l, table) - acc(u, table))) * 10 + 0.5) / 10;
+                            }
+                        },
+                    },
+                });
+            }
+        </script>
+        <style>
+            * {
+                position: relative;
+            }
+            html,
+            body {
+                width: 100%;
+                height: 100%;
+                padding: 0px;
+                margin: 0px;
+                overflow: auto;
+            }
+        </style>
+    </body>
+</html>
