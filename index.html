@@ -8,7 +8,7 @@
         <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
     </head>
     <body>
-        <div style="margin: 10px" id="app">
+        <div style="margin: 10px; display: none" id="app">
             <div>
                 轉換模式
                 <select v-model="mode">
@@ -208,6 +208,8 @@
                         },
                     },
                 });
+
+                document.querySelector("#app").style.display = "block";
             }
         </script>
         <style>
