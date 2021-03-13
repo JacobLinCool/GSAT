@@ -121,6 +121,8 @@
                                 自然: mid(自然, data[year].自然),
                             };
 
+                            console.log(TOPs, MIDs, BTMs);
+
                             let TOP = {},
                                 BTM = {},
                                 MID = {};
@@ -150,6 +152,8 @@
                                 MID[y]["自然"] = grade(MIDs.自然, data[y].自然);
                             }
 
+                            console.log(TOP, MID, BTM);
+
                             if (mode == "TOP") {
                                 return TOP;
                             } else if (mode == "BTM") {
@@ -170,7 +174,7 @@
                                 return sum;
                             }
                             function top(grade, table) {
-                                if (grade < 15) return acc(grade + 1, table) + 1;
+                                if (grade < 15) return acc(+grade + 1, table) + 1;
                                 else return 1;
                             }
                             function btm(grade, table) {
