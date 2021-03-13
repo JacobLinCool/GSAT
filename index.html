@@ -8,13 +8,50 @@
         <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
     </head>
     <body>
-        <div style="margin: 10px;" id="app">
-            <div v-for="itm in converted">
-                <div>
-                    <h2> {{ itm.year }} </h2>
-                    <p> {{ itm.data.國文 }}  {{ itm.data.英文 }}  {{ itm.data.數學 }}  {{ itm.data.社會 }}  {{ itm.data.自然 }} </p>
-                </div>
+        <div style="margin: 10px" id="app">
+            <div>
+                轉換模式
+                <select v-model="mode">
+                    <option value="TOP">TOP</option>
+                    <option value="MID">MID</option>
+                    <option value="BTM">BTM</option>
+                </select>
+                <br />
+                <small class="text-muted" v-if="mode=='TOP'"> 以該級分最高分者作轉換 </small>
+                <small class="text-muted" v-if="mode=='MID'"> 以該級分中位數者作轉換 </small>
+                <small class="text-muted" v-if="mode=='BTM'"> 以該級分最低分者作轉換 </small>
+                <br />
+
+                精度
+                <input type="number" v-model="precision" style="width: 80px" />
             </div>
+            <br />
+            <table style="width: 100%">
+                <tr>
+                    <th></th>
+                    <th>國文</th>
+                    <th>英文</th>
+                    <th>數學</th>
+                    <th>社會</th>
+                    <th>自然</th>
+                </tr>
+                <tr>
+                    <th>110</th>
+                    <td><input type="number" v-model="國文" /></td>
+                    <td><input type="number" v-model="英文" /></td>
+                    <td><input type="number" v-model="數學" /></td>
+                    <td><input type="number" v-model="社會" /></td>
+                    <td><input type="number" v-model="自然" /></td>
+                </tr>
+                <tr v-for="itm in converted">
+                    <th>{{ itm.year }}</th>
+                    <td>{{ itm.data.國文 }}</td>
+                    <td>{{ itm.data.英文 }}</td>
+                    <td>{{ itm.data.數學 }}</td>
+                    <td>{{ itm.data.社會 }}</td>
+                    <td>{{ itm.data.自然 }}</td>
+                </tr>
+            </table>
         </div>
         <script>
             fetch("counting.json")
@@ -31,25 +68,36 @@
                             數學: 15,
                             社會: 15,
                             自然: 15,
-                            mode: "AVG",
-                            data: data
+                            mode: "MID",
+                            data: data,
+                            precision: 1,
                         };
                     },
                     computed: {
                         converted() {
-                            let c = this.convert(this.國文, this.英文, this.數學, this.社會, this.自然, this.data, this.mode);
+                            console.log("Recomputing Converted Grades.");
+                            let c = this.convert(
+                                this.國文,
+                                this.英文,
+                                this.數學,
+                                this.社會,
+                                this.自然,
+                                this.data,
+                                this.mode,
+                                this.precision
+                            );
                             let r = [];
-                            for(let i in c) {
+                            for (let i in c) {
                                 r.push({
                                     year: i,
-                                    data: c[i]
+                                    data: c[i],
                                 });
                             }
-                            return r;
-                        }
+                            return r.reverse();
+                        },
                     },
                     methods: {
-                        convert(國文, 英文, 數學, 社會, 自然, data, mode = "AVG") {
+                        convert(國文, 英文, 數學, 社會, 自然, data, mode = "MID", precision = 1) {
                             let year = "110";
                             let TOPs = {
                                 國文: top(國文, data[year].國文),
@@ -65,17 +113,17 @@
                                 社會: btm(社會, data[year].社會),
                                 自然: btm(自然, data[year].自然),
                             };
-                            let AVGs = {
-                                國文: avg(國文, data[year].國文),
-                                英文: avg(英文, data[year].英文),
-                                數學: avg(數學, data[year].數學),
-                                社會: avg(社會, data[year].社會),
-                                自然: avg(自然, data[year].自然),
+                            let MIDs = {
+                                國文: mid(國文, data[year].國文),
+                                英文: mid(英文, data[year].英文),
+                                數學: mid(數學, data[year].數學),
+                                社會: mid(社會, data[year].社會),
+                                自然: mid(自然, data[year].自然),
                             };
 
                             let TOP = {},
                                 BTM = {},
-                                AVG = {};
+                                MID = {};
 
                             for (let y = 109; y >= 106; y--) {
                                 TOP[y] = {};
@@ -94,23 +142,23 @@
                                 BTM[y]["自然"] = grade(BTMs.自然, data[y].自然);
                             }
                             for (let y = 109; y >= 106; y--) {
-                                AVG[y] = {};
-                                AVG[y]["國文"] = grade(AVGs.國文, data[y].國文);
-                                AVG[y]["英文"] = grade(AVGs.英文, data[y].英文);
-                                AVG[y]["數學"] = grade(AVGs.數學, data[y].數學);
-                                AVG[y]["社會"] = grade(AVGs.社會, data[y].社會);
-                                AVG[y]["自然"] = grade(AVGs.自然, data[y].自然);
+                                MID[y] = {};
+                                MID[y]["國文"] = grade(MIDs.國文, data[y].國文);
+                                MID[y]["英文"] = grade(MIDs.英文, data[y].英文);
+                                MID[y]["數學"] = grade(MIDs.數學, data[y].數學);
+                                MID[y]["社會"] = grade(MIDs.社會, data[y].社會);
+                                MID[y]["自然"] = grade(MIDs.自然, data[y].自然);
                             }
 
                             if (mode == "TOP") {
                                 return TOP;
                             } else if (mode == "BTM") {
                                 return BTM;
-                            } else if (mode == "AVG") {
-                                return AVG;
+                            } else if (mode == "MID") {
+                                return MID;
                             } else {
                                 return {
-                                    AVG,
+                                    MID,
                                     TOP,
                                     BTM,
                                 };
@@ -122,13 +170,13 @@
                                 return sum;
                             }
                             function top(grade, table) {
-                                if (grade < 15) grade++;
-                                return acc(grade, table) + 1;
+                                if (grade < 15) return acc(grade + 1, table) + 1;
+                                else return 1;
                             }
                             function btm(grade, table) {
                                 return acc(grade, table);
                             }
-                            function avg(grade, table) {
+                            function mid(grade, table) {
                                 return parseInt((top(grade, table) + btm(grade, table)) / 2);
                             }
                             function grade(rank, table) {
@@ -140,7 +188,18 @@
                                         break;
                                     }
                                 }
-                                return Math.floor((u - (rank - acc(u, table)) / (acc(l, table) - acc(u, table))) * 10 + 0.5) / 10;
+                                return precision > 0
+                                    ? Math.floor(
+                                          (u - (rank - acc(u, table)) / (acc(l, table) - acc(u, table))) *
+                                              p_control(precision) +
+                                              0.5
+                                      ) / p_control(precision)
+                                    : Math.floor(u - (rank - acc(u, table)) / (acc(l, table) - acc(u, table)));
+                            }
+                            function p_control(p) {
+                                let x = 1;
+                                while (p-- > 0) x *= 10;
+                                return x;
                             }
                         },
                     },
@@ -158,6 +217,21 @@
                 padding: 0px;
                 margin: 0px;
                 overflow: auto;
+            }
+            #app {
+                font-size: 1.6rem;
+            }
+            td,
+            th {
+                text-align: right;
+                padding: 3px;
+            }
+            input[type="number"] {
+                text-align: right;
+                width: 100%;
+                border: 0;
+                background-color: rgba(103, 164, 255, 0.3);
+                border-radius: 5px;
             }
         </style>
     </body>
