@@ -8,7 +8,7 @@
         <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
     </head>
     <body>
-        <div style="margin: 10px; display: none" id="app">
+        <div style="margin: 10px; display: none; min-height: 92.5vh" id="app">
             <transition name="fade" mode="out-in">
                 <div
                     v-if="loading"
@@ -24,32 +24,65 @@
                     <p style="font-size: 24px">載入中 {{ loading_progress }}%</p>
                 </div>
                 <div v-else key="loaded">
+                    <transition name="fade">
+                        <div
+                            v-show="back && back.length"
+                            style="
+                                position: absolute;
+                                display: flex;
+                                justify-content: center;
+                                align-items: center;
+                                z-index: 100;
+                                top: 10px;
+                                right: 10px;
+                                width: 50px;
+                                height: 50px;
+                                border-radius: 50%;
+                                background-color: #ffffffbb;
+                                box-shadow: 1px 1px 4px 0px #000000aa;
+                                font-size: 32px;
+                                cursor: pointer;
+                            "
+                            @click="go_back()"
+                        >
+                            ❮
+                        </div>
+                    </transition>
                     <transition name="fade" mode="out-in">
                         <div v-if="mode=='department'" key="department">
                             <select
+                                class="form-control"
+                                style="margin: 4px 0"
                                 v-model="department_college"
                                 @change="department_department = Object.keys(departments[department_college])[0]"
                             >
                                 <option v-for="opt in colleges" :value="opt">{{ opt }}</option>
                             </select>
-                            <select v-model="department_department">
+                            <select class="form-control" style="margin: 4px 0" v-model="department_department">
                                 <option v-for="opt in college_departments" :value="opt">{{ opt }}</option>
                             </select>
                             <div v-for="cdt in departments[department_college][department_department].candidate">
-                                <div @click="candidate_mode(cdt)">{{ cdt }}</div>
+                                <div style="margin: 6px 3px" @click="candidate_mode(cdt)">{{ cdt }}</div>
                             </div>
                         </div>
                         <div v-else key="candidate">
+                            <small style="bottom: -3px">學測應試號碼</small>
                             <input type="number" v-model="candidate" />
                             <div v-for="dpt in candidates[candidate]">
-                                <div @click="department_mode(dpt.college, dpt.department)">
-                                    {{ dpt.college }} {{ dpt.department }}
+                                <div style="margin: 6px 3px" @click="department_mode(dpt.college, dpt.department)">
+                                    <small style="bottom: -3px"> {{ dpt.college }} </small> <br />
+                                    <span> {{ dpt.department.replace("（", "(").replace("）", ")") }} </span>
                                 </div>
                             </div>
                         </div>
                     </transition>
                 </div>
             </transition>
+        </div>
+        <div style="text-align: center">
+            Made with
+            <span style="color: #e25555">&hearts;</span> by
+            <a href="https://github.com/JacobLinCool" target="_blank">JacobLinCool</a>
         </div>
         <script>
             init_app();
@@ -67,6 +100,7 @@
                             candidate: "10014330",
                             department_college: "",
                             department_department: "",
+                            back: [],
                         };
                     },
                     computed: {
@@ -81,7 +115,7 @@
                         async load() {
                             let response = await fetch(`first_stage.json`);
                             let reader = response.body.getReader();
-                            let content = +response.headers.get("Content-Length");
+                            let content = 4300332; //+response.headers.get("Content-Length");
                             let received = 0;
                             let chunks = [];
                             while (true) {
@@ -122,13 +156,33 @@
                             return result;
                         },
                         department_mode(college, department) {
+                            this.back.push({
+                                mode: this.mode,
+                                college: this.department_college,
+                                department: this.department_department,
+                                candidate: this.candidate,
+                            });
                             this.department_college = college;
                             this.department_department = department;
                             this.mode = "department";
                         },
                         candidate_mode(candidate) {
+                            this.back.push({
+                                mode: this.mode,
+                                college: this.department_college,
+                                department: this.department_department,
+                                candidate: this.candidate,
+                            });
                             this.candidate = candidate;
                             this.mode = "candidate";
+                        },
+                        go_back() {
+                            if (!this.back || !this.back.length) return;
+                            let back = this.back.pop();
+                            this.mode = back.mode;
+                            this.department_college = back.college;
+                            this.department_department = back.department;
+                            this.candidate = back.candidate;
                         },
                     },
                     mounted() {
