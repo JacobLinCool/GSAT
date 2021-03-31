@@ -26,7 +26,7 @@
                 <div v-else key="loaded">
                     <transition name="fade">
                         <div
-                            v-show="back && back.length"
+                            v-show="false && back && back.length"
                             style="
                                 position: fixed;
                                 display: flex;
@@ -85,6 +85,7 @@
             <a href="https://github.com/JacobLinCool" target="_blank">JacobLinCool</a>
         </div>
         <script>
+            let params = new URL(document.location).searchParams;
             init_app();
 
             async function init_app() {
@@ -98,8 +99,8 @@
                             candidates: null,
                             departments: null,
                             candidate: "10014330",
-                            department_college: "",
-                            department_department: "",
+                            department_college: "國立臺灣大學",
+                            department_department: "醫學系",
                             back: [],
                         };
                     },
@@ -187,6 +188,31 @@
                     },
                     mounted() {
                         this.load();
+                        this.mode = params.get("mode") || this.mode;
+                        this.candidate = params.get("id") || this.candidate;
+                        this.department_college = params.get("college") || this.department_college;
+                        this.department_department = params.get("department") || this.department_department;
+                        window.onpopstate = (evt) => {
+                            app.go_back();
+                        };
+                    },
+                    watch: {
+                        mode(m) {
+                            params.set("mode", m);
+                            history.pushState({}, "個人申請一階查詢", `?${params.toString()}`);
+                        },
+                        candidate(c) {
+                            params.set("id", c);
+                            history.pushState({}, "個人申請一階查詢", `?${params.toString()}`);
+                        },
+                        department_college(c) {
+                            params.set("college", c);
+                            history.pushState({}, "個人申請一階查詢", `?${params.toString()}`);
+                        },
+                        department_department(d) {
+                            params.set("department", d);
+                            history.pushState({}, "個人申請一階查詢", `?${params.toString()}`);
+                        },
                     },
                 });
 
